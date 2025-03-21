@@ -29,114 +29,119 @@
     h1 {
       text-align: center;
       color: #2c3e50;
-      font-size: 2rem;
-      margin-bottom: 20px;
+      font-size: 1.5rem; /* Daha küçük başlık */
+      margin-bottom: 15px;
     }
 
     /* Tarih Bilgisi */
     #date-info {
       background-color: #ecf0f1;
-      padding: 15px;
+      padding: 8px; /* Daha küçük padding */
       border-radius: 8px;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       text-align: center;
-      font-size: 1rem;
+      font-size: 0.8rem; /* Daha küçük yazı boyutu */
       color: #34495e;
-    }
-
-    /* İki Kolonlu Düzen */
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-
-    .column {
-      flex: 1;
-      min-width: 300px;
     }
 
     /* Harita */
     #map {
-      height: 400px;
+      height: 250px; /* Daha dar yükseklik */
       width: 100%;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
     }
 
-    /* Namaz Vakitleri */
-    #result {
+    /* Namaz Vakitleri (Yatay Dizayn) */
+    #prayer-times {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px; /* Daha küçük boşluk */
+      margin-bottom: 15px;
+    }
+
+    .prayer-time {
       background-color: #f8f9fa;
-      padding: 20px;
+      padding: 10px; /* Daha küçük padding */
       border-radius: 8px;
-      font-size: 1rem;
-      color: #2c3e50;
+      text-align: center;
+      flex: 1;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
-    #result h2 {
-      margin-top: 0;
-      font-size: 1.5rem;
+    .prayer-time h3 {
+      margin: 0;
+      font-size: 0.9rem; /* Daha küçük başlık */
       color: #2980b9;
+    }
+
+    .prayer-time p {
+      margin: 3px 0 0; /* Daha küçük margin */
+      font-size: 0.8rem; /* Daha küçük yazı boyutu */
+      color: #2c3e50;
     }
 
     /* Geri Sayım */
     #countdown {
       background-color: #e74c3c;
       color: #fff;
-      padding: 15px;
+      padding: 10px; /* Daha küçük padding */
       border-radius: 8px;
       text-align: center;
-      font-size: 1.2rem;
-      margin-top: 20px;
+      font-size: 1rem; /* Daha küçük yazı boyutu */
+      margin-bottom: 15px;
     }
 
     /* Mobil Uyumlu Tasarım */
     @media (max-width: 768px) {
-      .row {
-        flex-direction: column;
-      }
-
       h1 {
-        font-size: 1.8rem;
+        font-size: 1.3rem;
       }
 
-      #date-info, #result, #countdown {
-        font-size: 0.9rem;
+      #date-info {
+        font-size: 0.7rem;
+        padding: 6px;
       }
 
-      #result h2 {
-        font-size: 1.2rem;
+      #map {
+        height: 200px;
+      }
+
+      #prayer-times {
+        flex-wrap: wrap; /* Mobilde alt alta sırala */
+      }
+
+      .prayer-time {
+        flex: 1 1 45%; /* Mobilde iki sütun halinde göster */
+        margin-bottom: 8px;
       }
 
       #countdown {
-        font-size: 1rem;
-      }
-
-      .container {
-        padding: 15px;
+        font-size: 0.9rem;
       }
     }
 
     @media (max-width: 480px) {
       h1 {
-        font-size: 1.5rem;
+        font-size: 1.2rem;
       }
 
-      #date-info, #result, #countdown {
-        font-size: 0.8rem;
+      #date-info {
+        font-size: 0.6rem;
+        padding: 5px;
       }
 
-      #result h2 {
-        font-size: 1rem;
+      #map {
+        height: 150px;
+      }
+
+      .prayer-time {
+        flex: 1 1 100%; /* Çok küçük ekranlarda tek sütun */
       }
 
       #countdown {
-        font-size: 0.9rem;
-      }
-
-      .container {
-        padding: 10px;
+        font-size: 0.8rem;
       }
     }
   </style>
@@ -145,20 +150,15 @@
   <div class="container">
     <h1>Namaz Vakitleri Hesaplama</h1>
     <div id="date-info"></div>
-    <div class="row">
-      <div class="column">
-        <div id="map"></div>
-      </div>
-      <div class="column">
-        <div id="result"></div>
-        <div id="countdown"></div>
-      </div>
-    </div>
+    <div id="map"></div>
+    <div id="countdown"></div>
+    <div id="prayer-times"></div>
   </div>
 
-  <!-- PrayTimes.js kütüphanesini yerel olarak ekleyin -->
-  <script src="pray-calc.js"></script>
+  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- PrayTimes.js -->
+  <script src="pray-calc.js"></script>
   <script>
     let currentPrayerTimes = null;
     let countdownInterval = null;
@@ -234,21 +234,38 @@
     // Koordinatlar üzerinden namaz vakitlerini hesaplama
     function calculatePrayerTimesByCoords(lat, lon) {
       const prayTimes = new PrayTimes();
-      prayTimes.setMethod('Turkey'); // Diyanet yöntemini kullan
+      prayTimes.setMethod('MWL'); // ISNA yöntemini kullan
 
       const date = new Date();
       currentPrayerTimes = prayTimes.getTimes(date, [lat, lon]);
 
       // Namaz vakitlerini göster
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = `
-        <h2>Namaz Vakitleri</h2>
-        <p><strong>Sabah:</strong> ${currentPrayerTimes.fajr}</p>
-        <p><strong>Güneş:</strong> ${currentPrayerTimes.sunrise}</p>
-        <p><strong>Öğle:</strong> ${currentPrayerTimes.dhuhr}</p>
-        <p><strong>İkindi:</strong> ${currentPrayerTimes.asr}</p>
-        <p><strong>Akşam:</strong> ${currentPrayerTimes.maghrib}</p>
-        <p><strong>Yatsı:</strong> ${currentPrayerTimes.isha}</p>
+      const prayerTimesDiv = document.getElementById('prayer-times');
+      prayerTimesDiv.innerHTML = `
+        <div class="prayer-time">
+          <h3>Sabah</h3>
+          <p>${currentPrayerTimes.fajr}</p>
+        </div>
+        <div class="prayer-time">
+          <h3>Güneş</h3>
+          <p>${currentPrayerTimes.sunrise}</p>
+        </div>
+        <div class="prayer-time">
+          <h3>Öğle</h3>
+          <p>${currentPrayerTimes.dhuhr}</p>
+        </div>
+        <div class="prayer-time">
+          <h3>İkindi</h3>
+          <p>${currentPrayerTimes.asr}</p>
+        </div>
+        <div class="prayer-time">
+          <h3>Akşam</h3>
+          <p>${currentPrayerTimes.maghrib}</p>
+        </div>
+        <div class="prayer-time">
+          <h3>Yatsı</h3>
+          <p>${currentPrayerTimes.isha}</p>
+        </div>
       `;
 
       startCountdown();
