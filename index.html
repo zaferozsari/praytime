@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Namaz Vakti Hesaplama</title>
 
-  <!-- Kritik CSS (Inline) -->
+  <!-- CSS -->
   <style>
     /* Genel Stil */
     body {
@@ -58,12 +58,13 @@
 
     /* Harita */
     #map {
-      height: 250px;
+      height: 400px;
       width: 100%;
       border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       margin-bottom: 15px;
+      display: none; /* Başlangıçta harita görünmesin */
     }
+	
 
     /* Geri Sayım */
     #countdown {
@@ -74,6 +75,7 @@
       text-align: center;
       font-size: 1rem;
       margin-bottom: 15px;
+	  display: none;
     }
 
     /* Namaz Vakitleri */
@@ -104,29 +106,39 @@
       font-size: 0.8rem;
       color: #2c3e50;
     }
+
+    /* Konum İzni Butonu */
+    #location-button {
+      display: block;
+      margin: 0 auto;
+      padding: 10px 20px;
+      background-color: #2980b9;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    #location-button:hover {
+      background-color: #3498db;
+    }
   </style>
 
-  <!-- Non-Critical CSS (Asenkron Yükleme) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" media="print" onload="this.media='all'">
 </head>
 <body>
   <div class="container">
-
-    <h1> Namaz Vakti Hesaplama </h1>
-    <div id="loading">Konum alınıyor...</div>
-    <div id="date-info"></div>
+    <h1>Namaz Vakti Hesaplama</h1>
+	<div id="date-info"></div>
+    <div id="loading">Hesaplama için konum bilgisi gerekli.</div>
+    <button id="location-button">Konum Paylaş</button>
+    
     <div id="map"></div>
     <div id="countdown"></div>
     <div id="prayer-times"></div>
   </div>
 
-  <!-- Non-Critical JavaScript (Defer ile Yükleme) -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-  
-
-  <!-- Kritik JavaScript (Inline) -->
-   <script src="pray-calc.js"></script>
-
+  <!-- Dinamik Olarak Yüklenecek Kütüphaneler -->
   <script>
     let currentPrayerTimes = null;
     let countdownInterval = null;
@@ -146,10 +158,13 @@
     const prayerTimesElement = document.getElementById("prayer-times");
     const loadingElement = document.getElementById("loading");
     const dateInfoElement = document.getElementById("date-info");
+    const locationButton = document.getElementById("location-button");
 
-    // DOMContentLoaded ile Başlat
-    document.addEventListener('DOMContentLoaded', function () {
-      showDateInfo();
+    // Sayfa yüklendiğinde tarih bilgisini göster
+    showDateInfo();
+
+    // Konum izni butonuna tıklama olayını ekle
+    locationButton.addEventListener('click', function () {
       getLocation();
     });
 
@@ -174,26 +189,40 @@
 
     function getLocation() {
       if (navigator.geolocation) {
+        // Butonu gizle ve yükleme göstergesini göster
+        locationButton.style.display = 'none';
+        loadingElement.innerHTML = 'Konum alınıyor...';
+
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const userLat = position.coords.latitude;
             const userLon = position.coords.longitude;
 
-            // Yükleme göstergesini gizle
+            // Konum bilgisi alındıktan sonra kütüphaneleri dinamik yükleyip işlemi başlat
+            loadPrayTimesAndCalculate(userLat, userLon);
+
+            // Konum alındıktan sonra loading mesajını kaldır
             loadingElement.style.display = 'none';
-
-            // Haritayı başlat
-            initMap(userLat, userLon);
-
-            // Namaz vakitlerini hesapla
-            calculatePrayerTimesByCoords(userLat, userLon);
           },
           (error) => {
-            loadingElement.innerHTML = 'Konum alınamadı. Lütfen yerinizi değiştirip sayfayı yenileyin.';
+            let errorMessage = "Konum alınamadı. Lütfen yerinizi değiştirip tekrar deneyin.";
+            switch (error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = "Konum izni reddedildi. Lütfen tarayıcı ayarlarınızdan izin verin.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = "Konum bilgisi alınamıyor. Lütfen internet bağlantınızı kontrol edin.";
+                break;
+              case error.TIMEOUT:
+                errorMessage = "Konum alımı zaman aşımına uğradı. Lütfen tekrar deneyin.";
+                break;
+            }
+            loadingElement.innerHTML = errorMessage;
             console.error("Konum alınamadı: ", error);
           },
           {
-            timeout: 70000 
+            timeout: 70000, // 70 saniye zaman aşımı
+            enableHighAccuracy: true // Yüksek doğruluk modu
           }
         );
       } else {
@@ -201,34 +230,92 @@
       }
     }
 
-    function initMap(lat, lon) {
-      map = L.map('map').setView([lat, lon], 13);
+    function loadPrayTimesAndCalculate(lat, lon) {
+      // PrayTimes ve Leaflet kütüphanelerini dinamik olarak yükle
+      const scriptPrayTimes = document.createElement('script');
+      scriptPrayTimes.src = "https://praytimes.org/code/v2/js/PrayTimes.js";
+      scriptPrayTimes.onload = function () {
+        const prayTimes = new PrayTimes();
+        prayTimes.setMethod('MWL');
+        const date = new Date();
+        currentPrayerTimes = prayTimes.getTimes(date, [lat, lon]);
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
+        // Namaz vakitlerini göster
+        prayerTimesElement.innerHTML = Object.entries(prayerNames).map(([key, name]) => `
+          <div class="prayer-time">
+            <h3>${name}</h3>
+            <p>${currentPrayerTimes[key]}</p>
+          </div>
+        `).join("");
 
-      marker = L.marker([lat, lon]).addTo(map);
+        // Geri sayımı başlat
+        startCountdown();
+
+        // Harita Yükle
+        loadLeafletLibrary(lat, lon);
+      };
+
+      document.body.appendChild(scriptPrayTimes);
+	  document.getElementById('countdown').style.display = 'block'; 
     }
 
-    function calculatePrayerTimesByCoords(lat, lon) {
-      const prayTimes = new PrayTimes();
-      prayTimes.setMethod('MWL');
+   function loadLeafletLibrary(lat, lon) {
+  // Leaflet CSS dosyasını dinamik olarak yükle
+  const scriptLeafletCss = document.createElement('link');
+  scriptLeafletCss.rel = "stylesheet";
+  scriptLeafletCss.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
 
-      const date = new Date();
-      currentPrayerTimes = prayTimes.getTimes(date, [lat, lon]);
+  // Leaflet JS dosyasını dinamik olarak yükle
+  const scriptLeaflet = document.createElement('script');
+  scriptLeaflet.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
 
-      // Namaz vakitlerini göster
-      prayerTimesElement.innerHTML = Object.entries(prayerNames).map(([key, name]) => `
-        <div class="prayer-time">
-          <h3>${name}</h3>
-          <p>${currentPrayerTimes[key]}</p>
-        </div>
-      `).join("");
+  // Leaflet CSS dosyası yüklendiğinde çalışacak fonksiyon
+  scriptLeafletCss.onload = function () {
+    console.log('Leaflet CSS kütüphanesi yüklendi.');
+  };
 
-      // Geri sayımı başlat
-      startCountdown();
-    }
+  // Leaflet JS dosyası yüklendiğinde çalışacak fonksiyon
+  scriptLeaflet.onload = function () {
+    console.log('Leaflet JS kütüphanesi yüklendi.');
+
+    // Harita yükleme işlemi burada başlasın
+    initMap(lat, lon);
+  };
+
+  // Dosyaları sayfaya ekle
+  document.body.appendChild(scriptLeafletCss);
+  document.body.appendChild(scriptLeaflet);
+}
+
+function initMap(lat, lon) {
+  // Harita başlatma işlemi burada
+  if (typeof L !== 'undefined') {
+    // Haritayı başlat
+    map = L.map('map').setView([lat, lon], 13); // Harita merkezi, 13 zoom seviyesi
+
+    // Tile Layer (katman) ekle
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19, // Maksimum zoom seviyesini belirle
+      tileSize: 256, // Tile boyutu
+    }).addTo(map);
+
+    // Marker ekle
+    marker = L.marker([lat, lon]).addTo(map);
+
+    // Haritayı görsel olarak göster
+    document.getElementById('map').style.display = 'block'; 
+
+    // Harita boyutlarını yeniden hesapla, bazen harita yüklenirken boyutlar doğru hesaplanamayabilir
+    setTimeout(function() {
+      map.invalidateSize();
+    }, 100);
+
+  } else {
+    console.error('Leaflet kütüphanesi yüklenemedi.');
+  }
+}
+
 
     function getNextPrayer() {
       if (!currentPrayerTimes) return null;
