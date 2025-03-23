@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Namaz Vakti Hesaplama</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Kritik CSS (Inline) -->
   <style>
     /* Genel Stil */
     body {
@@ -104,6 +105,9 @@
       color: #2c3e50;
     }
   </style>
+
+  <!-- Non-Critical CSS (Asenkron Yükleme) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" media="print" onload="this.media='all'">
 </head>
 <body>
   <div class="container">
@@ -115,8 +119,11 @@
     <div id="prayer-times"></div>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="pray-calc.js"></script>
+  <!-- Non-Critical JavaScript (Defer ile Yükleme) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  <script src="pray-calc.js" defer></script>
+
+  <!-- Kritik JavaScript (Inline) -->
   <script>
     let currentPrayerTimes = null;
     let countdownInterval = null;
