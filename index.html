@@ -29,18 +29,18 @@
     h1 {
       text-align: center;
       color: #2c3e50;
-      font-size: 1.5rem;
-      margin-bottom: 15px;
+      font-size: 1.1rem; /* Daha küçük başlık */
+      margin-bottom: 10px; /* Daha az boşluk */
     }
 
     /* Tarih Bilgisi */
     #date-info {
       background-color: #ecf0f1;
-      padding: 8px;
-      border-radius: 8px;
-      margin-bottom: 15px;
+      padding: 6px; /* Daha küçük padding */
+      border-radius: 6px;
+      margin-bottom: 10px; /* Daha az boşluk */
       text-align: center;
-      font-size: 0.8rem;
+      font-size: 0.7rem; /* Daha küçük yazı boyutu */
       color: #34495e;
     }
 
@@ -51,7 +51,6 @@
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       margin-bottom: 15px;
-      touch-action: none; /* Mobil dokunmatik etkileşimleri etkinleştir */
     }
 
     /* Namaz Vakitleri */
@@ -140,20 +139,14 @@
       });
       const gun = date.toLocaleDateString('tr-TR', { weekday: 'long' });
 
+      // Tarih bilgilerini tek satırda göster
       document.getElementById('date-info').innerHTML = `
-        <p>${miladiDate} | ${hicriDate}</p>
-        <p>${gun}</p> 
+        <p>${miladiDate} | ${hicriDate} | ${gun}</p>
       `;
     }
 
     function initMap() {
-      map = L.map('map', {
-        tap: false, // Mobil dokunmatik etkileşimleri etkinleştir
-        dragging: true, // Haritayı sürüklemeyi etkinleştir
-        touchZoom: true, // Dokunmatik zoom'u etkinleştir
-        scrollWheelZoom: true, // Fare tekerleği ile zoom'u etkinleştir
-        doubleClickZoom: true, // Çift tıklama ile zoom'u etkinleştir
-      }).setView([39.9208, 32.8541], 6);
+      map = L.map('map').setView([39.9208, 32.8541], 6);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
