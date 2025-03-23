@@ -51,6 +51,7 @@
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       margin-bottom: 15px;
+      touch-action: none; /* Mobil dokunmatik etkileşimleri etkinleştir */
     }
 
     /* Namaz Vakitleri */
@@ -146,7 +147,13 @@
     }
 
     function initMap() {
-      map = L.map('map').setView([39.9208, 32.8541], 6);
+      map = L.map('map', {
+        tap: false, // Mobil dokunmatik etkileşimleri etkinleştir
+        dragging: true, // Haritayı sürüklemeyi etkinleştir
+        touchZoom: true, // Dokunmatik zoom'u etkinleştir
+        scrollWheelZoom: true, // Fare tekerleği ile zoom'u etkinleştir
+        doubleClickZoom: true, // Çift tıklama ile zoom'u etkinleştir
+      }).setView([39.9208, 32.8541], 6);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
