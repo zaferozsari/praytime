@@ -165,12 +165,8 @@
 
     // Konum izni butonuna tıklama olayını ekle
     locationButton.addEventListener('click', function () {
-  if (!navigator.geolocation) {
-    alert("Tarayıcınız konum bilgilerini desteklemiyor. Lütfen güncel bir tarayıcı kullanın.");
-  } else {
-    getLocation(); // Konum bilgisi alımını başlat
-  }
-});
+      getLocation();
+    });
 
     function showDateInfo() {
       const date = new Date();
