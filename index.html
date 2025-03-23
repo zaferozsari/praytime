@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ezan Vakitleri Hesaplama</title>
+  <title>Namaz Vakti Hesaplama</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     /* Genel Stil */
@@ -29,28 +29,30 @@
     h1 {
       text-align: center;
       color: #2c3e50;
-      font-size: 1.1rem; /* Daha küçük başlık */
-      margin-bottom: 10px; /* Daha az boşluk */
+      font-size: 1.1rem;
+      margin-bottom: 10px;
+    }
+
+    /* Konum Yükleme Göstergesi */
+    #loading {
+      background-color: #f39c12;
+      color: #fff;
+      padding: 10px;
+      text-align: center;
+      font-size: 1rem;
+      border-radius: 8px;
+      margin-bottom: 15px;
     }
 
     /* Tarih Bilgisi */
     #date-info {
       background-color: #ecf0f1;
-      padding: 6px; /* Daha küçük padding */
+      padding: 6px;
       border-radius: 6px;
-      margin-bottom: 10px; /* Daha az boşluk */
+      margin-bottom: 10px;
       text-align: center;
-      font-size: 0.7rem; /* Daha küçük yazı boyutu */
+      font-size: 0.9rem;
       color: #34495e;
-    }
-
-    /* Harita */
-    #map {
-      height: 250px;
-      width: 100%;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      margin-bottom: 15px;
     }
 
     /* Namaz Vakitleri */
@@ -92,15 +94,25 @@
       font-size: 1rem;
       margin-bottom: 15px;
     }
+
+    /* Harita */
+    #map {
+      height: 250px;
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Namaz Vakti Hesaplama</h1>
+    <div id="loading">Konum alınıyor...</div>
     <div id="date-info"></div>
     <div id="map"></div>
-    <div id="countdown"></div>
     <div id="prayer-times"></div>
+    <div id="countdown"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -119,11 +131,17 @@
       isha: "Yatsı"
     };
 
-    window.onload = function () {
+    // DOM Elementlerini Önceden Seç
+    const countdownElement = document.getElementById("countdown");
+    const prayerTimesElement = document.getElementById("prayer-times");
+    const loadingElement = document.getElementById("loading");
+    const dateInfoElement = document.getElementById("date-info");
+
+    // DOMContentLoaded ile Başlat
+    document.addEventListener('DOMContentLoaded', function () {
       showDateInfo();
-      initMap();
       getLocation();
-    };
+    });
 
     function showDateInfo() {
       const date = new Date();
@@ -139,26 +157,9 @@
       });
       const gun = date.toLocaleDateString('tr-TR', { weekday: 'long' });
 
-      // Tarih bilgilerini tek satırda göster
-      document.getElementById('date-info').innerHTML = `
+      dateInfoElement.innerHTML = `
         <p>${miladiDate} | ${hicriDate} | ${gun}</p>
       `;
-    }
-
-    function initMap() {
-      map = L.map('map').setView([39.9208, 32.8541], 6);
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-      }).addTo(map);
-
-      map.on('click', function (e) {
-        if (marker) {
-          map.removeLayer(marker);
-        }
-        marker = L.marker(e.latlng).addTo(map);
-        calculatePrayerTimesByCoords(e.latlng.lat, e.latlng.lng);
-      });
     }
 
     function getLocation() {
@@ -167,16 +168,37 @@
           (position) => {
             const userLat = position.coords.latitude;
             const userLon = position.coords.longitude;
-            if (marker) {
-              map.removeLayer(marker);
-            }
-            marker = L.marker([userLat, userLon]).addTo(map);
-            map.setView([userLat, userLon], 13);
+
+            // Yükleme göstergesini gizle
+            loadingElement.style.display = 'none';
+
+            // Haritayı başlat
+            initMap(userLat, userLon);
+
+            // Namaz vakitlerini hesapla
             calculatePrayerTimesByCoords(userLat, userLon);
           },
-          () => alert("Konum alınamadı. Lütfen haritadan bir nokta seçin.")
+          (error) => {
+            loadingElement.innerHTML = 'Konum alınamadı. Lütfen manuel olarak bir yer seçin.';
+            console.error("Konum alınamadı: ", error);
+          },
+          {
+            timeout: 10000 // 10 saniye zaman aşımı
+          }
         );
+      } else {
+        alert("Tarayıcınız konum bilgilerini desteklemiyor.");
       }
+    }
+
+    function initMap(lat, lon) {
+      map = L.map('map').setView([lat, lon], 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      marker = L.marker([lat, lon]).addTo(map);
     }
 
     function calculatePrayerTimesByCoords(lat, lon) {
@@ -186,7 +208,7 @@
       const date = new Date();
       currentPrayerTimes = prayTimes.getTimes(date, [lat, lon]);
 
-      document.getElementById('prayer-times').innerHTML = Object.entries(prayerNames).map(([key, name]) => `
+      prayerTimesElement.innerHTML = Object.entries(prayerNames).map(([key, name]) => `
         <div class="prayer-time">
           <h3>${name}</h3>
           <p>${currentPrayerTimes[key]}</p>
@@ -222,8 +244,6 @@
     }
 
     function startCountdown() {
-      if (countdownInterval) clearInterval(countdownInterval);
-
       function updateCountdown() {
         const nextPrayer = getNextPrayer();
         if (!nextPrayer) return;
@@ -232,7 +252,6 @@
         let diff = nextPrayer.time - now;
 
         if (diff < 0) {
-          calculatePrayerTimesByCoords(marker.getLatLng().lat, marker.getLatLng().lng);
           return;
         }
 
@@ -240,14 +259,15 @@
         const minutes = Math.floor((diff % 3600000) / 60000);
         const seconds = Math.floor((diff % 60000) / 1000);
 
-        document.getElementById("countdown").innerHTML = `
+        countdownElement.innerHTML = `
           Sonraki Ezan: <strong>${nextPrayer.name}</strong> 
           ${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}
         `;
+
+        requestAnimationFrame(updateCountdown);
       }
 
       updateCountdown();
-      countdownInterval = setInterval(updateCountdown, 1000);
     }
   </script>
 </body>
