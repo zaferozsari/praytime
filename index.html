@@ -104,6 +104,23 @@
       font-size: 0.8rem;
       color: #2c3e50;
     }
+
+    /* Konum İzni Butonu */
+    #location-button {
+      display: block;
+      margin: 0 auto;
+      padding: 10px 20px;
+      background-color: #2980b9;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    #location-button:hover {
+      background-color: #3498db;
+    }
   </style>
 
   <!-- Non-Critical CSS (Asenkron Yükleme) -->
@@ -112,7 +129,8 @@
 <body>
   <div class="container">
     <h1>Namaz Vakti Hesaplama</h1>
-    <div id="loading">Konum alınıyor...</div>
+    <div id="loading">Konum bilgisi almak için lütfen butona tıklayın.</div>
+    <button id="location-button">Konum İzni Ver</button>
     <div id="date-info"></div>
     <div id="map"></div>
     <div id="countdown"></div>
@@ -121,11 +139,9 @@
 
   <!-- Non-Critical JavaScript (Defer ile Yükleme) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
-  
+  <script src="pray-calc.js" defer></script>
 
   <!-- Kritik JavaScript (Inline) -->
-   <script src="pray-calc.js"></script>
-
   <script>
     let currentPrayerTimes = null;
     let countdownInterval = null;
@@ -145,11 +161,13 @@
     const prayerTimesElement = document.getElementById("prayer-times");
     const loadingElement = document.getElementById("loading");
     const dateInfoElement = document.getElementById("date-info");
+    const locationButton = document.getElementById("location-button");
 
     // DOMContentLoaded ile Başlat
     document.addEventListener('DOMContentLoaded', function () {
       showDateInfo();
-      getLocation();
+      // Konum izni butonuna tıklama olayını ekle
+      locationButton.addEventListener('click', requestLocation);
     });
 
     function showDateInfo() {
@@ -171,8 +189,12 @@
       `;
     }
 
-    function getLocation() {
+    function requestLocation() {
       if (navigator.geolocation) {
+        // Butonu gizle ve yükleme göstergesini göster
+        locationButton.style.display = 'none';
+        loadingElement.innerHTML = 'Konum alınıyor...';
+
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const userLat = position.coords.latitude;
@@ -188,11 +210,11 @@
             calculatePrayerTimesByCoords(userLat, userLon);
           },
           (error) => {
-            loadingElement.innerHTML = 'Konum alınamadı. Lütfen manuel olarak bir yer seçin.';
+            loadingElement.innerHTML = 'Konum alınamadı. Lütfen yerinizi değiştirip tekrar deneyin.';
             console.error("Konum alınamadı: ", error);
           },
           {
-            timeout: 10000 // 10 saniye zaman aşımı
+            timeout: 70000 // 70 saniye zaman aşımı
           }
         );
       } else {
