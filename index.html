@@ -55,6 +55,26 @@
       color: #34495e;
     }
 
+    /* Harita */
+    #map {
+      height: 250px;
+      width: 100%;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+    }
+
+    /* Geri Sayım */
+    #countdown {
+      background-color: #e74c3c;
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: 1rem;
+      margin-bottom: 15px;
+    }
+
     /* Namaz Vakitleri */
     #prayer-times {
       display: flex;
@@ -83,26 +103,6 @@
       font-size: 0.8rem;
       color: #2c3e50;
     }
-
-    /* Geri Sayım */
-    #countdown {
-      background-color: #e74c3c;
-      color: #fff;
-      padding: 10px;
-      border-radius: 8px;
-      text-align: center;
-      font-size: 1rem;
-      margin-bottom: 15px;
-    }
-
-    /* Harita */
-    #map {
-      height: 250px;
-      width: 100%;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      margin-bottom: 15px;
-    }
   </style>
 </head>
 <body>
@@ -111,8 +111,8 @@
     <div id="loading">Konum alınıyor...</div>
     <div id="date-info"></div>
     <div id="map"></div>
-    <div id="prayer-times"></div>
     <div id="countdown"></div>
+    <div id="prayer-times"></div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -208,6 +208,7 @@
       const date = new Date();
       currentPrayerTimes = prayTimes.getTimes(date, [lat, lon]);
 
+      // Namaz vakitlerini göster
       prayerTimesElement.innerHTML = Object.entries(prayerNames).map(([key, name]) => `
         <div class="prayer-time">
           <h3>${name}</h3>
@@ -215,6 +216,7 @@
         </div>
       `).join("");
 
+      // Geri sayımı başlat
       startCountdown();
     }
 
