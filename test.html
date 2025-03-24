@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>En Hızlı Geolocation</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        #status { margin-top: 20px; font-size: 18px; font-weight: bold; color: #333; }
+        #map-link { display: none; margin-top: 10px; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <h1>Konumunuzu Alın</h1>
+    <button onclick="getBestLocation()">Konumumu Bul</button>
+    <p id="status">Konum bekleniyor...</p>
+    <a id="map-link" target="_blank">Haritada Gör</a>
+
+    <script>
+        function getBestLocation() {
+            const status = document.getElementById('status');
+            const mapLink = document.getElementById('map-link');
+
+            status.innerText = "Konum alınıyor... 📡";
+            mapLink.style.display = 'none'; 
+
+            const highAccuracyOptions = {
+                enableHighAccuracy: true, 
+                timeout: 8000, 
+                maximumAge: 10000
+            };
+
+            const fallbackOptions = {
+                enableHighAccuracy: false, 
+                timeout: 5000, 
+                maximumAge: 30000
+            };
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    status.innerHTML = `✅ Konum alındı! <br> 🌍 Enlem: ${lat} <br> 📍 Boylam: ${lon}`;
+                    mapLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
+                    mapLink.innerText = "Haritada Gör";
+                    mapLink.style.display = 'block';
+                },
+                (error) => {
+                    status.innerText = "⚠️ Hassas konum alınamadı, düşük doğrulukla tekrar deneniyor...";
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const lat = position.coords.latitude;
+                            const lon = position.coords.longitude;
+                            status.innerHTML = `⚠️ Konum (Düşük Hassasiyet) <br> 🌍 Enlem: ${lat} <br> 📍 Boylam: ${lon}`;
+                            mapLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
+                            mapLink.innerText = "Haritada Gör";
+                            mapLink.style.display = 'block';
+                        },
+                        (err) => {
+                            status.innerText = `❌ Konum alınamadı: ${err.message}`;
+                        },
+                        fallbackOptions
+                    );
+                },
+                highAccuracyOptions
+            );
+        }
+    </script>
+
+</body>
+</html>
