@@ -1,64 +1,107 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Konum Alma</title>
-  <style>
-    #status {
-      font-size: 18px;
-      color: #333;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konum Alıcı</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            display: none;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
-  <div id="status">Konum alınmaya çalışılıyor...</div>
+    <h1>Konum Bilgisi Al</h1>
+    <button onclick="getLocation()">Konum Al</button>
 
-  <script>
-    let statusElement = document.getElementById('status');
-    let attempts = 0;
+    <div id="result">
+        <h3>Konum Bilgisi:</h3>
+        <p id="location"></p>
+    </div>
 
-    // Konum alma fonksiyonu
-    function getLocation(attempts) {
-      if (attempts >= 5) {  // 5 deneme sonrası çık
-        statusElement.innerText = "Konum alınamadı. Lütfen bağlantınızı kontrol edin.";
-        return;
-      }
+    <script>
+        function getLocation() {
+            // Sonuçları ekranda göstermek için öncelikle ekranı sıfırlıyoruz
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('location').innerHTML = '';
 
-      const options = {
-        timeout: 10000, // 10 saniye zaman aşımı
-        enableHighAccuracy: false, // Başlangıçta düşük doğruluk
-      };
+            // İlk denemede düşük doğrulukla başla
+            tryToGetLocation(3, 50000); // 3 deneme hakkı, 5 saniye timeout ile
 
-      if (attempts === 0) {
-        statusElement.innerText = "Konum alınmaya çalışılıyor...";
-      } else {
-        statusElement.innerText = `Yüksek doğruluk ile tekrar deneme (${attempts})...`;
-      }
+        }
 
-      navigator.geolocation.getCurrentPosition(
-        function(position) {
-          // Başarılı konum alındığında
-          let lat = position.coords.latitude;
-          let lon = position.coords.longitude;
-          statusElement.innerHTML = `Konum Alındı: <br>Lat: ${lat} <br>Lon: ${lon}`;
-        },
-        function(error) {
-          if (error.code === error.TIMEOUT) {
-            statusElement.innerText = "Zaman aşımı, tekrar denemeye çalışılıyor...";
-            setTimeout(function() {
-              getLocation(attempts + 1);  // Yeniden deneme
-            }, 3000);  // 3 saniye sonra tekrar dene
-          } else {
-            statusElement.innerText = "Konum alınamadı: " + error.message;
-          }
-        },
-        options
-      );
-    }
+        // Konum alma fonksiyonu
+        function tryToGetLocation(retries, timeout) {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        showLocation(position);
+                    },
+                    (error) => {
+                        if (error.code === error.PERMISSION_DENIED) {
+                            alert("Konum izni verilmedi.");
+                        } else if (error.code === error.TIMEOUT) {
+                            alert("Zaman aşımı, konum alınamadı.");
+                        }
 
-    // Başlangıçta konum almayı başlat
-    getLocation(attempts);
-  </script>
+                        if (retries > 0) {
+                            console.log('Konum alınamadı, yeniden denenecek...');
+                            // Zaman aşımından sonra tekrar dene
+                            setTimeout(() => tryToGetLocation(retries - 1, timeout), timeout);
+                        } else {
+                            alert("Konum alınamadı.");
+                            console.log('Konum alınamıyor. Alternatif yöntemlere geçiliyor.');
+                        }
+                    },
+                    {
+                        enableHighAccuracy: false,  // İlk deneme düşük doğrulukla
+                        timeout: timeout,           // Belirli bir süre içinde cevap al
+                        maximumAge: 0               // Her zaman güncel konum bilgisi
+                    }
+                );
+            } else {
+                alert("Geolocation API desteklenmiyor.");
+            }
+        }
+
+        // Konum verisini ekrana yazdırma
+        function showLocation(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            document.getElementById('location').innerHTML = `
+                Enlem: ${latitude}<br>
+                Boylam: ${longitude}
+            `;
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
 </body>
 </html>
