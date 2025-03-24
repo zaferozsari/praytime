@@ -19,86 +19,58 @@
     <a id="map-link" target="_blank">Haritada Gör</a>
 
     <script>
-												  
-													 
+        let lastPosition = null; // Geçerli konum
+        let lastAccuracy = null; // Konum doğruluğu
 
         function getBestLocation() {
             const status = document.getElementById('status');
             const mapLink = document.getElementById('map-link');
-            let watchId;
+            let attempts = 0;
 
             status.innerText = "Konum alınıyor... 📡";
-            mapLink.style.display = 'none'; 
+            mapLink.style.display = 'none';
 
-            // Yüksek doğruluk ile başla
-            const highAccuracyOptions = {
-                enableHighAccuracy: true, 
-                timeout: 8000, 
-                maximumAge: 10000
-            };
-
-											   
-													 
-													  
-														  
-
-            // Düşük doğruluk için fallback
-            const fallbackOptions = {
-                enableHighAccuracy: false, 
-                timeout: 5000, 
-                maximumAge: 30000
-										   
-            };
-										
-
-            // İleriye doğru doğru konum almak için, izlemeye başla
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    const accuracy = position.coords.accuracy;
-
-                    // Yüksek doğruluk alındığında hemen sonlandır
-                    if (accuracy <= 30) { // 30 metreden daha hassassa yüksek doğruluk
-                        navigator.geolocation.clearWatch(watchId);
-                        status.innerHTML = `✅ Konum alındı! <br> 🌍 Enlem: ${lat} <br> 📍 Boylam: ${lon}`;
-                        mapLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
-                        mapLink.innerText = "Haritada Gör";
-                        mapLink.style.display = 'block';
+            // Düşük doğruluk için optimize edilmiş getCurrentPosition
+            function tryGetPosition(options) {
+                navigator.geolocation.getCurrentPosition(updatePosition, (err) => {
+                    if (attempts < 3) { // Üçüncü denemeye kadar deneme
+                        attempts++;
+                        console.log('Yine başaramadık, bir üst doğruluk seviyesi ile yeniden deniyoruz...');
+                        if (attempts == 1) {
+                            tryGetPosition({ enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 });
+                        } else if (attempts == 2) {
+                            tryGetPosition({ enableHighAccuracy: true, timeout: 5000, maximumAge: 5000 });
+                        } else {
+                            status.innerText = `❌ Konum alınamadı: ${err.message}`;
+                        }
                     } else {
-                        // Hızlı alınıp gösterilecek düşük doğruluk
-                        status.innerHTML = `⚠️ Konum (Düşük Hassasiyet) <br> 🌍 Enlem: ${lat} <br> 📍 Boylam: ${lon}`;
-                        mapLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
-                        mapLink.innerText = "Haritada Gör";
-                        mapLink.style.display = 'block';
-                    }
-                },
-                (error) => {
-                    status.innerText = `❌ Konum alınamadı: ${error.message}`;
-                },
-                highAccuracyOptions
-            );
-
-            // Eğer yüksek doğruluk 10 saniye içinde alındıysa, fallback'e geçme
-            setTimeout(() => {
-                navigator.geolocation.clearWatch(watchId);
-                status.innerText = "⚠️ Yüksek doğruluk alınamadı, düşük doğrulukla devam ediliyor.";
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lon = position.coords.longitude;
-                        status.innerHTML = `⚠️ Konum (Düşük Hassasiyet) <br> 🌍 Enlem: ${lat} <br> 📍 Boylam: ${lon}`;
-                        mapLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
-                        mapLink.innerText = "Haritada Gör";
-                        mapLink.style.display = 'block';
-                    },
-                    (err) => {
                         status.innerText = `❌ Konum alınamadı: ${err.message}`;
-                    },
-                    fallbackOptions
-                );
-            }, 10000); // 10 saniye sonunda, fallback ile düşük doğruluğa geçiş
-									   
+                    }
+                }, options);
+            }
+
+            function updatePosition(position) {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                const accuracy = position.coords.accuracy;
+
+                // Eğer konum çok yakınsa, sadece en iyi sonucu al
+                if (lastPosition && (lat === lastPosition.latitude && lon === lastPosition.longitude)) {
+                    return; // Aynı konumu tekrar almadan geç
+                }
+
+                // Konum verisini güncelle
+                lastPosition = { latitude: lat, longitude: lon };
+                lastAccuracy = accuracy;
+
+                status.innerHTML = `⚠️ Konum (Düşük Hassasiyet) <br> 🌍 Enlem: ${lat} <br> 📍 Boylam: ${lon}`;
+                mapLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
+                mapLink.innerText = "Haritada Gör";
+                mapLink.style.display = 'block';
+            }
+
+            // Başlangıçta düşük doğrulukla konum almayı dene
+            tryGetPosition({ enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 });
 
         }
     </script>
