@@ -30,15 +30,13 @@
             // Yüksek doğruluk ile başla
             const highAccuracyOptions = {
                 enableHighAccuracy: true, 
-                timeout: 80000, 
-                maximumAge: 100000
+                timeout: 20000
             };
 
             // Düşük doğruluk için fallback
             const fallbackOptions = {
                 enableHighAccuracy: false, 
-                timeout: 50000, 
-                maximumAge: 300000
+                timeout: 30000
             };
 
             // İleriye doğru doğru konum almak için, izlemeye başla
@@ -87,7 +85,7 @@
                     },
                     fallbackOptions
                 );
-            }, 10000); // 10 saniye sonunda, fallback ile düşük doğruluğa geçiş
+            }, 20000); // 10 saniye sonunda, fallback ile düşük doğruluğa geçiş
         }
     </script>
 
