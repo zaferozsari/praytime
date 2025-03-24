@@ -10,7 +10,7 @@
         #status { margin-top: 20px; font-size: 18px; font-weight: bold; color: #333; }
         #map-link { display: none; margin-top: 10px; font-size: 16px; }
     </style>
-</head>
+</head>     
 <body>
 
     <h1>Konumunuzu Alın</h1>
@@ -37,9 +37,9 @@
                         attempts++;
                         console.log('Yine başaramadık, bir üst doğruluk seviyesi ile yeniden deniyoruz...');
                         if (attempts == 1) {
-                            tryGetPosition({ enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 });
+                            tryGetPosition({ enableHighAccuracy: false, timeout: 10000, maximumAge: 10000 });
                         } else if (attempts == 2) {
-                            tryGetPosition({ enableHighAccuracy: true, timeout: 5000, maximumAge: 5000 });
+                            tryGetPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 });
                         } else {
                             status.innerText = `❌ Konum alınamadı: ${err.message}`;
                         }
@@ -70,7 +70,7 @@
             }
 
             // Başlangıçta düşük doğrulukla konum almayı dene
-            tryGetPosition({ enableHighAccuracy: false, timeout: 5000, maximumAge: 10000 });
+            tryGetPosition({ enableHighAccuracy: false, timeout: 10000, maximumAge: 10000 });
 
         }
     </script>
