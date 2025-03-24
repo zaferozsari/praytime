@@ -1,79 +1,64 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>En Hızlı Konum Hesaplama</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
-        #status { margin-top: 20px; font-size: 18px; font-weight: bold; color: #333; }
-        #map-link { display: none; margin-top: 10px; font-size: 16px; }
-    </style>
-</head>     
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konum Alma</title>
+  <style>
+    #status {
+      font-size: 18px;
+      color: #333;
+    }
+  </style>
+</head>
 <body>
+  <div id="status">Konum alınmaya çalışılıyor...</div>
 
-    <h1>Konumunuzu Alın</h1>
-    <button onclick="getBestLocation()">Konumumu Bul</button>
-    <p id="status">Konum bekleniyor...</p>
-    <a id="map-link" target="_blank">Haritada Gör</a>
+  <script>
+    let statusElement = document.getElementById('status');
+    let attempts = 0;
 
-    <script>
-        let lastPosition = null; // Geçerli konum
-        let lastAccuracy = null; // Konum doğruluğu
+    // Konum alma fonksiyonu
+    function getLocation(attempts) {
+      if (attempts >= 5) {  // 5 deneme sonrası çık
+        statusElement.innerText = "Konum alınamadı. Lütfen bağlantınızı kontrol edin.";
+        return;
+      }
 
-        function getBestLocation() {
-            const status = document.getElementById('status');
-            const mapLink = document.getElementById('map-link');
-            let attempts = 0;
+      const options = {
+        timeout: 10000, // 10 saniye zaman aşımı
+        enableHighAccuracy: false, // Başlangıçta düşük doğruluk
+      };
 
-            status.innerText = "Konum alınıyor... 📡";
-            mapLink.style.display = 'none';
+      if (attempts === 0) {
+        statusElement.innerText = "Konum alınmaya çalışılıyor...";
+      } else {
+        statusElement.innerText = `Yüksek doğruluk ile tekrar deneme (${attempts})...`;
+      }
 
-            // Düşük doğruluk için optimize edilmiş getCurrentPosition
-            function tryGetPosition(options) {
-                navigator.geolocation.getCurrentPosition(updatePosition, (err) => {
-                    if (attempts < 3) { // Üçüncü denemeye kadar deneme
-                        attempts++;
-                        console.log('Yine başaramadık, bir üst doğruluk seviyesi ile yeniden deniyoruz...');
-                        if (attempts == 1) {
-                            tryGetPosition({ enableHighAccuracy: false, timeout: 10000, maximumAge: 10000 });
-                        } else if (attempts == 2) {
-                            tryGetPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 });
-                        } else {
-                            status.innerText = `❌ Konum alınamadı: ${err.message}`;
-                        }
-                    } else {
-                        status.innerText = `❌ Konum alınamadı: ${err.message}`;
-                    }
-                }, options);
-            }
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          // Başarılı konum alındığında
+          let lat = position.coords.latitude;
+          let lon = position.coords.longitude;
+          statusElement.innerHTML = `Konum Alındı: <br>Lat: ${lat} <br>Lon: ${lon}`;
+        },
+        function(error) {
+          if (error.code === error.TIMEOUT) {
+            statusElement.innerText = "Zaman aşımı, tekrar denemeye çalışılıyor...";
+            setTimeout(function() {
+              getLocation(attempts + 1);  // Yeniden deneme
+            }, 3000);  // 3 saniye sonra tekrar dene
+          } else {
+            statusElement.innerText = "Konum alınamadı: " + error.message;
+          }
+        },
+        options
+      );
+    }
 
-            function updatePosition(position) {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                const accuracy = position.coords.accuracy;
-
-                // Eğer konum çok yakınsa, sadece en iyi sonucu al
-                if (lastPosition && (lat === lastPosition.latitude && lon === lastPosition.longitude)) {
-                    return; // Aynı konumu tekrar almadan geç
-                }
-
-                // Konum verisini güncelle
-                lastPosition = { latitude: lat, longitude: lon };
-                lastAccuracy = accuracy;
-
-                status.innerHTML = `⚠️ Konum (Düşük Hassasiyet) <br> 🌍 Enlem: ${lat} <br> 📍 Boylam: ${lon}`;
-                mapLink.href = `https://www.google.com/maps?q=${lat},${lon}`;
-                mapLink.innerText = "Haritada Gör";
-                mapLink.style.display = 'block';
-            }
-
-            // Başlangıçta düşük doğrulukla konum almayı dene
-            tryGetPosition({ enableHighAccuracy: false, timeout: 10000, maximumAge: 10000 });
-
-        }
-    </script>
-
+    // Başlangıçta konum almayı başlat
+    getLocation(attempts);
+  </script>
 </body>
 </html>
